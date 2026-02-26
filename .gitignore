@@ -1,0 +1,3 @@
+/node_modules
+.turbo
+/app/generated/prisma
