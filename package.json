@@ -17,6 +17,7 @@
   "type": "commonjs",
   "packageManager": "npm@8.5.0",
   "devDependencies": {
+    "@types/node": "^25.3.2",
     "turbo": "^2.8.11"
   }
 }

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "./generated/prisma"
 }
 
 datasource db {
@@ -15,6 +15,7 @@ model User {
   name  String?
   posts Post[]
 } 
+
 model Post { 
   id        Int     @id @default(autoincrement()) 
   title     String
