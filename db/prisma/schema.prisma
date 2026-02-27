@@ -7,20 +7,119 @@ datasource db {
   provider = "postgresql"
 }
 
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
 
-// Fake model
-model User { 
-  id    Int     @id @default(autoincrement()) 
-  email String  @unique
-  name  String?
-  posts Post[]
-} 
+model User {
+  uuid           String   @id @unique @default(uuid()) @db.VarChar(64)
+  username       String   @unique @db.VarChar(30)
+  email          String   @unique @db.VarChar(70)
+  password       String   @db.VarChar(64)
+  score          Int      @default(0) @db.Integer
+  reviewCount    Int      @default(0) @db.Integer
+  biography      String   @default("") @db.VarChar(160)
+  followersCount Int      @default(0)
+  followingCount Int      @default(0)
+  createdAt      DateTime @default(now())
 
-model Post { 
-  id        Int     @id @default(autoincrement()) 
-  title     String
-  content   String?
-  published Boolean @default(false) 
-  author    User    @relation(fields: [authorId], references: [id]) 
-  authorId  Int
-} 
+  reviews      Review[]
+  votes        Vote[]
+  repositories Repository[]
+  commits      Commit[]
+  followers    Follow[]     @relation("UserFollowers")
+  following    Follow[]     @relation("UserFollowing")
+
+  @@index([username])
+  @@index([email])
+}
+
+model Review {
+  uuid          String   @id @unique @default(uuid()) @db.VarChar(64)
+  content       String   @db.Text
+  userUuid      String   @db.VarChar(64)
+  commitUuid    String   @db.VarChar(64)
+  upVoteCount   Int      @default(0) // belli bir upvote alanlarda score artar
+  downVoteCount Int      @default(0) // belli bir downvote alanlarda score dusecek
+  createdAt     DateTime @default(now())
+
+  user   User   @relation(fields: [userUuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  commit Commit @relation(fields: [commitUuid], references: [uuid])
+  votes  Vote[]
+
+  @@unique([userUuid, commitUuid])
+  @@index([userUuid])
+  @@index([commitUuid])
+}
+
+model Vote {
+  uuid       String   @id @unique @default(uuid()) @db.VarChar(64)
+  userUuid   String   @db.VarChar(64)
+  reviewUuid String   @db.VarChar(64)
+  vote       VoteType
+  createdAt  DateTime @default(now())
+
+  user   User   @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+  review Review @relation(fields: [reviewUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([userUuid, reviewUuid])
+  @@index([userUuid])
+  @@index([reviewUuid])
+}
+
+model Repository {
+  uuid          String    @id @unique @default(uuid()) @db.VarChar(64)
+  ownerUuid     String    @db.VarChar(64)
+  githubUuid    BigInt    @unique
+  name          String
+  fullName      String    @unique
+  description   String?
+  defaultBranch String
+  pushedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  commits Commit[]
+  owner   User     @relation(fields: [ownerUuid], references: [uuid])
+
+  @@index([ownerUuid])
+  @@index([githubUuid])
+}
+
+model Commit {
+  uuid     String  @id @default(uuid()) @db.VarChar(64)
+  repoUuid String  @db.VarChar(64)
+  userUuid String? @db.VarChar(64)
+
+  sha         String   @db.VarChar(40) // Git commit SHA
+  message     String   @db.Text
+  authorName  String   @db.VarChar(100)
+  authorEmail String   @db.VarChar(100)
+  branch      String   @db.VarChar(100)
+  committedAt DateTime @db.Timestamp(6)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews    Review[]
+  user       User?      @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+  repository Repository @relation(fields: [repoUuid], references: [uuid])
+
+  @@unique([repoUuid, sha])
+  @@index([repoUuid])
+}
+
+model Follow {
+  uuid             String   @id @unique @default(uuid()) @db.VarChar(64)
+  followerUserUuid String   @db.VarChar(64) // Takip eden (ben)
+  followedUserUuid String   @db.VarChar(64) // Takip edilen (başkası)
+  createdAt        DateTime @default(now())
+
+  follower User @relation("UserFollowing", fields: [followerUserUuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+  followed User @relation("UserFollowers", fields: [followedUserUuid], references: [uuid], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([followerUserUuid, followedUserUuid])
+  @@index([followerUserUuid]) // "Kimleri takip ediyorum?"
+  @@index([followedUserUuid]) // "Takipçilerim kim?"
+}
