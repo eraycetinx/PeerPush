@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": [
     "app/*",
-    "db/*"
+    "db"
   ],
   "description": "",
   "main": "index.js",
