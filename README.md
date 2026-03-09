@@ -29,7 +29,7 @@ Duplicate `.env.example` files and rename them as `.env`.
 
 ### 3. Prisma Setup and Database Configuration
 
-Move to `db/prisma` folder.
+Move to `db/` folder.
 
 ```bash
 cd db
